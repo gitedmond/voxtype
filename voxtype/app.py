@@ -16,6 +16,7 @@ from voxtype.overlay import RecordingOverlay
 from voxtype.settings_window import SettingsWindow
 from voxtype.sound_utils import play_sound
 from voxtype.audio_muter import AudioMuter
+from voxtype.history import HistoryManager
 
 _SINGLE_INSTANCE_MUTEX = None
 
@@ -60,9 +61,16 @@ class VoxTypeApp:
         self.qt_app = QApplication.instance() or QApplication(sys.argv)
         self.qt_app.setQuitOnLastWindowClosed(False)
 
+        # Initialize History Manager
+        self.history_mgr = HistoryManager(max_items=self.config.max_history_items)
+
         # Initialize UI Components
         self.overlay = RecordingOverlay()
-        self.settings_window = SettingsWindow(self.config, on_save_callback=self._on_config_updated)
+        self.settings_window = SettingsWindow(
+            self.config,
+            on_save_callback=self._on_config_updated,
+            on_reinject_callback=self._on_reinject_requested
+        )
 
         # Create System Tray
         self.tray = QSystemTrayIcon(QIcon(create_tray_icon_pixmap()), self.qt_app)
@@ -71,14 +79,18 @@ class VoxTypeApp:
         self.tray.show()
 
         # Initialize Core Engines & Utilities
-        self.audio = AudioRecorder()
+        self.audio = AudioRecorder(
+            device_index=self.config.audio_device_index,
+            gain=self.config.whisper_mode_gain
+        )
         self.audio_muter = AudioMuter(enabled=self.config.mute_pc_audio)
 
         self.asr = ASREngine(
             model_name=self.config.whisper_model,
             compute_type=self.config.whisper_compute_type,
             device=self.config.whisper_device,
-            language=self.config.whisper_language
+            language=self.config.whisper_language,
+            translate_mode=self.config.translate_mode
         )
         self.asr.set_dictionary(self.config.custom_terms)
 
@@ -94,9 +106,10 @@ class VoxTypeApp:
             restore_clipboard=self.config.restore_clipboard
         )
 
-        # State tracking for Command Mode & Pre-processing
+        # State tracking for Command Mode, Pre-processing, & VRAM Offload
         self.current_selection = ""
         self.latest_stream_transcript = ""
+        self._last_activity_time = time.time()
 
         # Initialize Global Hotkeys
         self.hotkeys = HotkeyManager(
@@ -104,6 +117,9 @@ class VoxTypeApp:
             on_recording_stop=self._on_recording_stop,
             double_tap_ms=self.config.double_tap_ms
         )
+
+        # Start background VRAM idle offload monitor
+        threading.Thread(target=self._vram_idle_monitor, daemon=True).start()
 
     def _build_tray_menu(self):
         menu = QMenu()
@@ -127,19 +143,40 @@ class VoxTypeApp:
             self._open_settings()
 
     def _open_settings(self):
+        self.settings_window._refresh_history_table()
         self.settings_window.show()
         self.settings_window.activateWindow()
+
+    def _on_reinject_requested(self, text: str):
+        print(f"[VoxType] Re-injecting selected history text ({len(text)} chars)...")
+        if self.config.append_trailing_space and not text.endswith(" ") and not text.endswith("\n"):
+            text += " "
+        self.injector.inject(text)
+
+    def _vram_idle_monitor(self):
+        """Monitor idle time and unload Whisper model from GPU VRAM when threshold is reached."""
+        while True:
+            time.sleep(10)
+            mins = self.config.vram_offload_mins
+            if mins > 0 and self.asr.is_loaded:
+                idle_sec = time.time() - self._last_activity_time
+                if idle_sec >= (mins * 60):
+                    print(f"[VRAM Monitor] Idle for {int(idle_sec)}s (>{mins}m). Unloading Whisper from GPU VRAM.")
+                    self.asr.unload_model()
 
     def _on_config_updated(self, new_config: VoxTypeConfig):
         print("[VoxType] Applying updated configuration...")
         self.config = new_config
 
-        # Update Audio Muter
+        # Update Audio Recorder (device & gain)
+        self.audio.device_index = self.config.audio_device_index
+        self.audio.gain = self.config.whisper_mode_gain
         self.audio_muter.enabled = self.config.mute_pc_audio
 
         # Update ASR
         self.asr.set_dictionary(self.config.custom_terms)
         self.asr.language = self.config.whisper_language
+        self.asr.translate_mode = self.config.translate_mode
         if self.asr.model_name != self.config.whisper_model or self.asr.compute_type != self.config.whisper_compute_type:
             self.asr.model_name = self.config.whisper_model
             self.asr.compute_type = self.config.whisper_compute_type
@@ -158,6 +195,7 @@ class VoxTypeApp:
         self.hotkeys.double_tap_sec = self.config.double_tap_ms / 1000.0
 
     def _on_recording_start(self, is_command_mode: bool = False):
+        self._last_activity_time = time.time()
         self.latest_stream_transcript = ""
         self.audio_muter.mute()
 
@@ -194,6 +232,7 @@ class VoxTypeApp:
                     pass
 
     def _on_recording_stop(self, is_command_mode: bool = False):
+        self._last_activity_time = time.time()
         audio_data = self.audio.stop()
 
         if self.config.show_overlay:
@@ -230,15 +269,25 @@ class VoxTypeApp:
         if not raw_text.strip():
             return
 
+        mode_label = "Dictation"
         # 2. Process with LLM (or passthrough if LLM cleanup is disabled)
         if is_command_mode and selection:
+            mode_label = "Command Mode"
             output_text = self.llm.command(selection, raw_text)
         elif self.config.use_llm_cleanup:
+            mode_label = "AI Cleanup"
             output_text = self.llm.cleanup(raw_text)
         else:
             output_text = raw_text
 
-        # 3. Inject text instantly at current cursor location
+        # 3. Record in persistent history
+        self.history_mgr.add_entry(
+            text=output_text,
+            mode=mode_label,
+            language=self.config.whisper_language or "auto"
+        )
+
+        # 4. Inject text instantly at current cursor location
         if output_text.strip():
             if self.config.append_trailing_space and not output_text.endswith(" ") and not output_text.endswith("\n"):
                 output_text += " "
