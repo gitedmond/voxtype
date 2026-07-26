@@ -25,9 +25,10 @@ VoxType was created to give users complete control over their voice dictation:
 - **System-Wide Global Hotkeys**:
   - `Ctrl + Win` — Press and hold to dictate, or double-tap to lock recording on.
   - `Ctrl + Win + Shift` — Command Mode (highlight text in any app, dictate a command, and transform it in-place).
+  - `Ctrl + Win + S` — Instantly open/bring up the Control Dashboard GUI.
 - **Automatic Background Audio Muting**: Mutes PC speaker playback (YouTube, Spotify, games) during dictation via Windows Core Audio (PyCAW) so background noise never interferes with recognition.
 - **Pulsing Recording Overlay**: Floating frameless red dot indicator in the top-right corner of your screen during recording.
-- **Control Dashboard GUI**: Minimalist white Qt dashboard (inspired by Ollama) to easily toggle startup options, models, dictionaries, and sound cues.
+- **Control Dashboard GUI & History**: Minimalist white Qt dashboard to easily search past dictation history, toggle startup options, models, dictionaries, translation, gain boost, and sound cues.
 - **Silent Background Execution**: Runs windowlessly in the background without any terminal/console taskbar window.
 - **Windows Startup Support**: One-click toggle to launch automatically when Windows boots up.
 
@@ -73,8 +74,10 @@ Double-click `run_silent.vbs` (or `run.bat`) to launch VoxType silently in the b
 |----------|--------|-------------|
 | `Ctrl + Win` (Hold) | **Hold-to-Talk Dictation** | Speak while holding the keys. Release to instantly paste text at your cursor. |
 | `Ctrl + Win` (Double-Tap) | **Lock Recording Mode** | Tap twice to lock recording ON. Tap once more when done speaking to paste. |
-| `Ctrl + Win + Shift` | **Command Mode** | Select text in any app, hold hotkey, and state a command (e.g., *"Make this formal"* or *"Rewrite as bullet points"*). |
-| System Tray / Launch | **Control Dashboard** | Open settings, add custom dictionary jargon, or configure Windows Startup. |
+| `Ctrl + Win + Shift` | **Command Mode** | Select text in any app, hold hotkey, and state a command. |
+| `Ctrl + Win + S` | **Open Dashboard** | Global hotkey to instantly bring up the VoxType Settings & History Dashboard. |
+| Double-click `run_silent.vbs` | **Re-open Dashboard** | Double-clicking `run_silent.vbs` or `run.bat` at any time re-opens the Dashboard. |
+| System Tray Icon | **Taskbar System Tray** | Click the VoxType icon in the Windows notification area (`^`) to open Dashboard. |
 
 ---
 

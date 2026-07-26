@@ -1,10 +1,11 @@
 import sys
 import time
 import ctypes
+import socket
 import threading
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal
 
 from voxtype.config import load_config, VoxTypeConfig
 from voxtype.audio import AudioRecorder
@@ -18,20 +19,26 @@ from voxtype.sound_utils import play_sound
 from voxtype.audio_muter import AudioMuter
 from voxtype.history import HistoryManager
 
-_SINGLE_INSTANCE_MUTEX = None
+IPC_PORT = 49812
 
-def ensure_single_instance(app_name="VoxType_SingleInstance_Mutex"):
-    """Prevent multiple instances of VoxType from running concurrently on Windows."""
-    global _SINGLE_INSTANCE_MUTEX
-    if sys.platform == "win32":
-        kernel32 = ctypes.windll.kernel32
-        mutex = kernel32.CreateMutexW(None, False, app_name)
-        last_error = kernel32.GetLastError()
-        ERROR_ALREADY_EXISTS = 183
-        if last_error == ERROR_ALREADY_EXISTS:
-            print("[VoxType] An instance of VoxType is already running. Exiting duplicate process.")
-            sys.exit(0)
-        _SINGLE_INSTANCE_MUTEX = mutex
+class AppBridge(QObject):
+    signal_open_dashboard = Signal()
+
+def check_single_instance_or_trigger_dashboard() -> bool:
+    """
+    Check if VoxType is already running. If so, send OPEN_DASHBOARD signal to
+    the running instance via localhost socket so it re-opens its window, then return True.
+    """
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.settimeout(0.5)
+        client.connect(("127.0.0.1", IPC_PORT))
+        client.sendall(b"OPEN_DASHBOARD")
+        client.close()
+        print("[VoxType] An instance is already running. Re-opened Control Dashboard GUI.")
+        return True
+    except Exception:
+        return False
 
 def create_tray_icon_pixmap() -> QPixmap:
     """Create a clean 32x32 icon for the system tray."""
@@ -57,9 +64,12 @@ class VoxTypeApp:
         print("[VoxType] Initializing application...")
         self.config: VoxTypeConfig = load_config()
 
-        # Initialize Qt Application
+        # Initialize Qt Application & Signals
         self.qt_app = QApplication.instance() or QApplication(sys.argv)
         self.qt_app.setQuitOnLastWindowClosed(False)
+
+        self.bridge = AppBridge()
+        self.bridge.signal_open_dashboard.connect(self._open_settings)
 
         # Initialize History Manager
         self.history_mgr = HistoryManager(max_items=self.config.max_history_items)
@@ -115,16 +125,35 @@ class VoxTypeApp:
         self.hotkeys = HotkeyManager(
             on_recording_start=self._on_recording_start,
             on_recording_stop=self._on_recording_stop,
+            on_toggle_dashboard=self._open_settings,
             double_tap_ms=self.config.double_tap_ms
         )
 
-        # Start background VRAM idle offload monitor
+        # Start background IPC server & VRAM idle monitor
+        threading.Thread(target=self._start_ipc_server, daemon=True).start()
         threading.Thread(target=self._vram_idle_monitor, daemon=True).start()
+
+    def _start_ipc_server(self):
+        """Listen for incoming IPC activation signals from duplicate launches."""
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            server.bind(("127.0.0.1", IPC_PORT))
+            server.listen(5)
+            print(f"[IPC] Listening for dashboard activation signals on port {IPC_PORT}...")
+            while True:
+                conn, _ = server.accept()
+                data = conn.recv(1024)
+                if b"OPEN_DASHBOARD" in data:
+                    self.bridge.signal_open_dashboard.emit()
+                conn.close()
+        except Exception as e:
+            print(f"[IPC] Server error: {e}")
 
     def _build_tray_menu(self):
         menu = QMenu()
 
-        status_action = menu.addAction("VoxType Dashboard (Ctrl+Win)")
+        status_action = menu.addAction("VoxType Dashboard (Ctrl+Win+S)")
         status_action.triggered.connect(self._open_settings)
         menu.addSeparator()
 
@@ -145,7 +174,9 @@ class VoxTypeApp:
     def _open_settings(self):
         self.settings_window._refresh_history_table()
         self.settings_window.show()
+        self.settings_window.setWindowState(self.settings_window.windowState() & ~Qt.WindowState.WindowMinimized | Qt.WindowState.WindowActive)
         self.settings_window.activateWindow()
+        self.settings_window.raise_()
 
     def _on_reinject_requested(self, text: str):
         print(f"[VoxType] Re-injecting selected history text ({len(text)} chars)...")
@@ -294,7 +325,7 @@ class VoxTypeApp:
             self.injector.inject(output_text)
 
     def run(self):
-        print("[VoxType] Ready. Press Ctrl+Win to dictate!")
+        print("[VoxType] Ready. Press Ctrl+Win to dictate, or Ctrl+Win+S for Dashboard!")
         self.hotkeys.start()
         self._open_settings()
         sys.exit(self.qt_app.exec())
@@ -306,7 +337,8 @@ class VoxTypeApp:
         self.qt_app.quit()
 
 def main():
-    ensure_single_instance()
+    if check_single_instance_or_trigger_dashboard():
+        sys.exit(0)
     app = VoxTypeApp()
     app.run()
 

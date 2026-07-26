@@ -10,13 +10,15 @@ class HotkeyState(Enum):
     RECORDING_LOCKED = auto()
 
 class HotkeyManager:
-    def __init__(self, on_recording_start, on_recording_stop, double_tap_ms: int = 400):
+    def __init__(self, on_recording_start, on_recording_stop, on_toggle_dashboard=None, double_tap_ms: int = 400):
         """
         on_recording_start: callable(is_command_mode: bool)
         on_recording_stop: callable(is_command_mode: bool)
+        on_toggle_dashboard: callable()
         """
         self.on_recording_start = on_recording_start
         self.on_recording_stop = on_recording_stop
+        self.on_toggle_dashboard = on_toggle_dashboard
         self.double_tap_sec = double_tap_ms / 1000.0
 
         self.state = HotkeyState.IDLE
@@ -33,7 +35,7 @@ class HotkeyManager:
         self._kb_controller = keyboard.Controller()
 
     def start(self) -> None:
-        print("[Hotkeys] Starting global hotkey listener (Ctrl+Win)...")
+        print("[Hotkeys] Starting global hotkey listener (Ctrl+Win dictation, Ctrl+Win+S dashboard)...")
         self._listener = keyboard.Listener(
             on_press=self._on_press,
             on_release=self._on_release
@@ -52,7 +54,6 @@ class HotkeyManager:
     def _prevent_start_menu(self) -> None:
         """Prevent Windows Start Menu from popping up when Win key is released."""
         try:
-            # Tap Shift briefly to satisfy Windows that another key was pressed with Win
             self._kb_controller.press(keyboard.Key.shift)
             self._kb_controller.release(keyboard.Key.shift)
         except Exception:
@@ -68,6 +69,14 @@ class HotkeyManager:
             self._shift_pressed = True
 
         with self._lock:
+            # Check for Ctrl+Win+S (Toggle Dashboard)
+            if self._is_hotkey_combo() and hasattr(key, 'char') and key.char in ('s', 'S'):
+                self._prevent_start_menu()
+                if self.on_toggle_dashboard:
+                    print("[Hotkeys] Ctrl+Win+S pressed -> Opening Dashboard.")
+                    self.on_toggle_dashboard()
+                    return
+
             if self._is_hotkey_combo():
                 self._prevent_start_menu()
                 now = time.time()
