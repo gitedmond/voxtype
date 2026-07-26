@@ -1,4 +1,4 @@
-# VoxType 🎙️
+# VoxType
 
 **VoxType** is a free, privacy-first, fully local AI voice dictation and text transformation tool for Windows — inspired by commercial cloud apps like Wispr Flow.
 
@@ -6,33 +6,33 @@ It runs **100% on your own PC** using local GPU acceleration. No subscriptions, 
 
 ---
 
-## 🌟 Why VoxType Was Created
+## Why VoxType Was Created
 
 Commercial cloud dictation services charge monthly subscription fees ($15+/month) and send your voice recordings to remote cloud servers for speech-to-text processing.
 
 VoxType was created to give users complete control over their voice dictation:
-- **🔒 100% Private**: Your voice never leaves your local hardware.
-- **💸 Completely Free**: Powered by open-source models on your local GPU.
-- **⚡ Near-Zero Latency**: Real-time streaming GPU pre-processing with instant native clipboard injection.
-- **🎛️ Fully Customizable**: Choose between instant raw dictation or local LLM formatting, manage custom dictionaries, and customize prompts.
+- **100% Private**: Your voice never leaves your local hardware.
+- **Completely Free**: Powered by open-source models on your local GPU.
+- **Near-Zero Latency**: Real-time streaming GPU pre-processing with instant native clipboard injection.
+- **Fully Customizable**: Choose between instant raw dictation or local LLM formatting, manage custom dictionaries, and customize prompts.
 
 ---
 
-## ✨ Features
+## Features
 
-- **⚡ Instant Raw Dictation**: Powered by `faster-whisper` (`large-v3-turbo` model on CUDA INT8). Instant, accurate verbatim speech-to-text.
-- **🧠 Optional AI Cleanup & Command Mode**: Optional Ollama integration (`llama3.2:3b` / `llama3.1:8b`) to clean up filler words ("um", "uh"), format markdown bullet lists, or transform selected text in-place.
-- **⌨️ System-Wide Global Hotkeys**:
+- **Instant Raw Dictation**: Powered by `faster-whisper` (`large-v3-turbo` model on CUDA INT8). Instant, accurate verbatim speech-to-text.
+- **Optional AI Cleanup & Command Mode**: Optional Ollama integration (`llama3.2:3b` / `llama3.1:8b`) to clean up filler words ("um", "uh"), format markdown bullet lists, or transform selected text in-place.
+- **System-Wide Global Hotkeys**:
   - `Ctrl + Win` — Press and hold to dictate, or double-tap to lock recording on.
   - `Ctrl + Win + Shift` — Command Mode (highlight text in any app, dictate a command, and transform it in-place).
-- **🔇 Automatic Background Audio Muting**: Mutes PC speaker playback (YouTube, Spotify, games) during dictation via Windows Core Audio (PyCAW) so background noise never interferes with recognition.
-- **🔴 Pulsing Recording Overlay**: Floating frameless red dot indicator in the top-right corner of your screen during recording.
-- **🖥️ Control Dashboard GUI**: Minimalist white Qt dashboard (inspired by Ollama) to easily toggle startup options, models, dictionaries, and sound cues.
-- **🚀 Windows Startup Support**: One-click toggle to launch automatically when Windows boots up.
+- **Automatic Background Audio Muting**: Mutes PC speaker playback (YouTube, Spotify, games) during dictation via Windows Core Audio (PyCAW) so background noise never interferes with recognition.
+- **Pulsing Recording Overlay**: Floating frameless red dot indicator in the top-right corner of your screen during recording.
+- **Control Dashboard GUI**: Minimalist white Qt dashboard (inspired by Ollama) to easily toggle startup options, models, dictionaries, and sound cues.
+- **Windows Startup Support**: One-click toggle to launch automatically when Windows boots up.
 
 ---
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 - **OS**: Windows 10 or Windows 11 (64-bit)
 - **Python**: Python 3.10+ (tested on Python 3.14)
@@ -41,7 +41,7 @@ VoxType was created to give users complete control over their voice dictation:
 
 ---
 
-## 🚀 Quick Start & Installation
+## Quick Start & Installation
 
 ### 1. Clone the Repository
 ```cmd
@@ -69,7 +69,7 @@ run.bat
 
 ---
 
-## 🎮 Usage Guide
+## Usage Guide
 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
@@ -80,7 +80,7 @@ run.bat
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -98,6 +98,6 @@ run.bat
 
 ---
 
-## 📜 License
+## License
 
 Distributed under the [MIT License](LICENSE).
