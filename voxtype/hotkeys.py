@@ -10,15 +10,13 @@ class HotkeyState(Enum):
     RECORDING_LOCKED = auto()
 
 class HotkeyManager:
-    def __init__(self, on_recording_start, on_recording_stop, on_toggle_dashboard=None, double_tap_ms: int = 400):
+    def __init__(self, on_recording_start, on_recording_stop, double_tap_ms: int = 400):
         """
         on_recording_start: callable(is_command_mode: bool)
         on_recording_stop: callable(is_command_mode: bool)
-        on_toggle_dashboard: callable()
         """
         self.on_recording_start = on_recording_start
         self.on_recording_stop = on_recording_stop
-        self.on_toggle_dashboard = on_toggle_dashboard
         self.double_tap_sec = double_tap_ms / 1000.0
 
         self.state = HotkeyState.IDLE
@@ -35,7 +33,7 @@ class HotkeyManager:
         self._kb_controller = keyboard.Controller()
 
     def start(self) -> None:
-        print("[Hotkeys] Starting global hotkey listener (Ctrl+Win dictation, Ctrl+Win+S dashboard)...")
+        print("[Hotkeys] Starting global hotkey listener (Ctrl+Win dictation)...")
         self._listener = keyboard.Listener(
             on_press=self._on_press,
             on_release=self._on_release
@@ -68,6 +66,7 @@ class HotkeyManager:
         elif key in (keyboard.Key.shift, keyboard.Key.shift_r, keyboard.Key.shift_l):
             self._shift_pressed = True
 
+        with self._lock:
             if self._is_hotkey_combo():
                 self._prevent_start_menu()
                 now = time.time()
