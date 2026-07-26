@@ -3,8 +3,9 @@
 env/
 venv/
 
-# Configuration (user-specific runtime config)
+# Configuration & Data (user-specific runtime files)
 config.json
+history.json
 
 # Generated sound assets
 voxtype/sounds/*.wav
