@@ -69,11 +69,11 @@ class HotkeyManager:
             self._shift_pressed = True
 
         with self._lock:
-            # Check for Ctrl+Win+S (Toggle Dashboard)
-            if self._is_hotkey_combo() and hasattr(key, 'char') and key.char in ('s', 'S'):
+            # Check for Ctrl+Win+C or Ctrl+Win+O (Toggle Dashboard)
+            if self._is_hotkey_combo() and hasattr(key, 'char') and key.char in ('c', 'C', 'o', 'O'):
                 self._prevent_start_menu()
                 if self.on_toggle_dashboard:
-                    print("[Hotkeys] Ctrl+Win+S pressed -> Opening Dashboard.")
+                    print(f"[Hotkeys] Ctrl+Win+{key.char.upper()} pressed -> Opening Dashboard.")
                     self.on_toggle_dashboard()
                     return
 
