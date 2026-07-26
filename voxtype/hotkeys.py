@@ -68,15 +68,6 @@ class HotkeyManager:
         elif key in (keyboard.Key.shift, keyboard.Key.shift_r, keyboard.Key.shift_l):
             self._shift_pressed = True
 
-        with self._lock:
-            # Check for Ctrl+Win+C or Ctrl+Win+O (Toggle Dashboard)
-            if self._is_hotkey_combo() and hasattr(key, 'char') and key.char in ('c', 'C', 'o', 'O'):
-                self._prevent_start_menu()
-                if self.on_toggle_dashboard:
-                    print(f"[Hotkeys] Ctrl+Win+{key.char.upper()} pressed -> Opening Dashboard.")
-                    self.on_toggle_dashboard()
-                    return
-
             if self._is_hotkey_combo():
                 self._prevent_start_menu()
                 now = time.time()

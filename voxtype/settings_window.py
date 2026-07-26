@@ -243,10 +243,6 @@ class SettingsWindow(QMainWindow):
         self.cmd_hotkey_label.setStyleSheet("color: #0F172A; font-weight: bold;")
         form.addRow("Command Mode Hotkey:", self.cmd_hotkey_label)
 
-        self.dash_hotkey_label = QLabel("Ctrl + Win + C  (or Ctrl + Win + O)")
-        self.dash_hotkey_label.setStyleSheet("color: #0F172A; font-weight: bold;")
-        form.addRow("Dashboard Hotkey:", self.dash_hotkey_label)
-
         # Double tap slider
         self.double_tap_slider = QSlider(Qt.Orientation.Horizontal)
         self.double_tap_slider.setRange(200, 800)
