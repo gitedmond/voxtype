@@ -1,5 +1,6 @@
 import sys
 import time
+import ctypes
 import threading
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
@@ -15,6 +16,21 @@ from voxtype.overlay import RecordingOverlay
 from voxtype.settings_window import SettingsWindow
 from voxtype.sound_utils import play_sound
 from voxtype.audio_muter import AudioMuter
+
+_SINGLE_INSTANCE_MUTEX = None
+
+def ensure_single_instance(app_name="VoxType_SingleInstance_Mutex"):
+    """Prevent multiple instances of VoxType from running concurrently on Windows."""
+    global _SINGLE_INSTANCE_MUTEX
+    if sys.platform == "win32":
+        kernel32 = ctypes.windll.kernel32
+        mutex = kernel32.CreateMutexW(None, False, app_name)
+        last_error = kernel32.GetLastError()
+        ERROR_ALREADY_EXISTS = 183
+        if last_error == ERROR_ALREADY_EXISTS:
+            print("[VoxType] An instance of VoxType is already running. Exiting duplicate process.")
+            sys.exit(0)
+        _SINGLE_INSTANCE_MUTEX = mutex
 
 def create_tray_icon_pixmap() -> QPixmap:
     """Create a clean 32x32 icon for the system tray."""
@@ -241,6 +257,7 @@ class VoxTypeApp:
         self.qt_app.quit()
 
 def main():
+    ensure_single_instance()
     app = VoxTypeApp()
     app.run()
 
