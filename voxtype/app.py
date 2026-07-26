@@ -342,9 +342,6 @@ class VoxTypeApp:
         self.qt_app.quit()
 
 def main():
-    if not ensure_single_instance():
-        print("[VoxType] Already running, exiting secondary instance.")
-        sys.exit(0)
     app = VoxTypeApp()
     app.run()
 
