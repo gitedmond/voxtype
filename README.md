@@ -28,6 +28,7 @@ VoxType was created to give users complete control over their voice dictation:
 - **Automatic Background Audio Muting**: Mutes PC speaker playback (YouTube, Spotify, games) during dictation via Windows Core Audio (PyCAW) so background noise never interferes with recognition.
 - **Pulsing Recording Overlay**: Floating frameless red dot indicator in the top-right corner of your screen during recording.
 - **Control Dashboard GUI**: Minimalist white Qt dashboard (inspired by Ollama) to easily toggle startup options, models, dictionaries, and sound cues.
+- **Silent Background Execution**: Runs windowlessly in the background without any terminal/console taskbar window.
 - **Windows Startup Support**: One-click toggle to launch automatically when Windows boots up.
 
 ---
@@ -61,11 +62,8 @@ pip install -r requirements.txt
 ollama pull llama3.2:3b
 ```
 
-### 4. Launch VoxType
-Double-click `run.bat` or execute:
-```cmd
-run.bat
-```
+### 4. Launch VoxType Windowlessly
+Double-click `run_silent.vbs` (or `run.bat`) to launch VoxType silently in the background with zero terminal windows.
 
 ---
 

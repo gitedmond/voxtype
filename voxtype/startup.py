@@ -6,8 +6,11 @@ REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
 APP_NAME = "VoxType"
 
 def get_launch_command() -> str:
-    """Get path to launch run.bat or pythonw app."""
+    """Get windowless launch command for VoxType."""
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pythonw_path = os.path.join(project_dir, ".venv", "Scripts", "pythonw.exe")
+    if os.path.exists(pythonw_path):
+        return f'"{pythonw_path}" -m voxtype.app'
     run_bat = os.path.join(project_dir, "run.bat")
     return f'"{run_bat}"'
 

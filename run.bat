@@ -1,4 +1,3 @@
 @echo off
 cd /d "%~dp0"
-call .venv\Scripts\activate.bat
-python -m voxtype.app
+start "" ".venv\Scripts\pythonw.exe" -m voxtype.app
