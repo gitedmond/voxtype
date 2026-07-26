@@ -28,12 +28,14 @@ class VoxTypeConfig(BaseModel):
     # General
     run_on_startup: bool = False
     double_tap_ms: int = 400
+    vram_offload_mins: int = 15  # 0 = Never, 5, 15, 30
 
     # ASR
     whisper_model: str = "large-v3-turbo"
     whisper_compute_type: str = "int8"
     whisper_device: str = "cuda"
     whisper_language: str | None = None  # None = auto-detect
+    translate_mode: bool = False  # True = translate any language to English
 
     # LLM (Default FALSE: Raw dictation is fast, instant, and 100% accurate!)
     use_llm_cleanup: bool = False
@@ -45,15 +47,20 @@ class VoxTypeConfig(BaseModel):
     # Personal Dictionary
     custom_terms: list[str] = []
 
-    # UI & Audio Settings
+    # Audio & Hardware Controls
     play_sounds: bool = True
     show_overlay: bool = True
     mute_pc_audio: bool = True
+    whisper_mode_gain: float = 1.0  # 1.0 = Normal, 2.0x-4.0x = Low-volume whispered speech boost
+    audio_device_index: int | None = None  # None = Default Windows Microphone
 
     # Injection
     paste_delay_ms: int = 50
     restore_clipboard: bool = False  # False = leave transcribed text in clipboard for 100% reliable paste
     append_trailing_space: bool = True  # True = append space after sentence so consecutive dictations format cleanly
+
+    # History
+    max_history_items: int = 500
 
 def load_config() -> VoxTypeConfig:
     if CONFIG_PATH.exists():
